@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from algorithm import calculate_distance, optimize_route
 from flask_cors import CORS
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -41,7 +42,25 @@ class Order(db.Model):
     def __repr__(self):
         return f'<Order {self.id} - {self.customer_name}>'
 
+def geocode_address(address):
+    """Address ko latitude/longitude mein convert karta hai Nominatim API se"""
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        'q': address,
+        'format': 'json',
+        'limit': 1
+    }
+    headers = {
+        'User-Agent': 'RouteWise-App'
+    }
 
+    response = requests.get(url, params=params, headers=headers)
+    data = response.json()
+
+    if data:
+        return float(data[0]['lat']), float(data[0]['lon'])
+    else:
+        return None, None
 @app.route('/')
 def home():
     return 'Hello RouteWise'
@@ -109,21 +128,28 @@ def get_all_users():
 
 
 @app.route('/add-order', methods=['POST'])
+@jwt_required()
 def add_order():
     data = request.get_json()
+    current_user_id = get_jwt_identity()
+
+    lat, lon = geocode_address(data['address'])
+
+    if lat is None:
+        return jsonify({'message': 'Could not find location for this address!'}), 400
 
     new_order = Order(
-        vendor_id=data['vendor_id'],
+        vendor_id=current_user_id,
         customer_name=data['customer_name'],
         address=data['address'],
-        latitude=data.get('latitude'),
-        longitude=data.get('longitude')
+        latitude=lat,
+        longitude=lon
     )
 
     db.session.add(new_order)
     db.session.commit()
 
-    return jsonify({'message': 'Order added successfully!'})
+    return jsonify({'message': 'Order added successfully!', 'latitude': lat, 'longitude': lon})
 
 
 @app.route('/all-orders', methods=['GET'])
