@@ -1,6 +1,4 @@
 import os
-import smtplib
-from email.message import EmailMessage
 from datetime import datetime, timedelta, timezone
 
 import secrets
@@ -118,25 +116,35 @@ def get_current_user():
 
     return db.session.get(User, int(get_jwt_identity()))
 
-def send_otp_email(to_email, otp):
-    smtp_server = os.getenv('BREVO_SMTP_SERVER')
-    smtp_port = int(os.getenv('BREVO_SMTP_PORT', 587))
-    smtp_login = os.getenv('BREVO_SMTP_LOGIN')
-    smtp_key = os.getenv('BREVO_SMTP_KEY')
 
+def send_otp_email(to_email, otp):
+    api_key = os.getenv('BREVO_API_KEY')
     sender_email = os.getenv('BREVO_SENDER_EMAIL')
     sender_name = os.getenv('BREVO_SENDER_NAME', 'RouteWise')
 
-    if not all([smtp_server, smtp_login, smtp_key, sender_email]):
-        raise ValueError("Brevo SMTP configuration is incomplete.")
+    if not api_key or not sender_email:
+        raise ValueError("Brevo API configuration is incomplete.")
 
-    message = EmailMessage()
-    message['Subject'] = 'Your RouteWise Email Verification OTP'
-    message['From'] = f'{sender_name} <{sender_email}>'
-    message['To'] = to_email
+    url = "https://api.brevo.com/v3/smtp/email"
 
-    message.set_content(
-        f'''Hello,
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json"
+    }
+
+    payload = {
+        "sender": {
+            "name": sender_name,
+            "email": sender_email
+        },
+        "to": [
+            {
+                "email": to_email
+            }
+        ],
+        "subject": "Your RouteWise Email Verification OTP",
+        "textContent": f"""Hello,
 
 Your RouteWise verification OTP is: {otp}
 
@@ -145,13 +153,18 @@ This OTP is valid for 2 minutes.
 Please do not share this OTP with anyone.
 
 Regards,
-RouteWise Team'''
+RouteWise Team"""
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=20
     )
 
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_login, smtp_key)
-        server.send_message(message)
+    response.raise_for_status()
+
 
 @app.route('/send-otp', methods=['POST'])
 def send_otp():
