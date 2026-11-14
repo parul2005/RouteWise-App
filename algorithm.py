@@ -1,9 +1,7 @@
-import heapq
-from math import radians, sin, cos, sqrt, atan2
+from math import atan2, cos, radians, sin, sqrt
 
 
 def calculate_distance(lat1, lon1, lat2, lon2):
-    """Do GPS coordinates ke beech real distance (km mein) nikalta hai"""
     R = 6371  # Earth ka radius, kilometers mein
 
     lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
@@ -19,12 +17,6 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 
 def optimize_route(store_location, orders):
-    """
-    store_location: (latitude, longitude) tuple - vendor ka store
-    orders: list of dicts, har dict mein 'id', 'latitude', 'longitude' hona chahiye
-
-    Return: orders ki best sequence (Greedy Nearest Neighbor approach)
-    """
     unvisited = orders.copy()
     route = []
     current_location = store_location
@@ -43,9 +35,10 @@ def optimize_route(store_location, orders):
                 nearest_distance = dist
                 nearest_order = order
 
-        route.append(nearest_order)
+        route.append({**nearest_order, 'leg_distance_km': round(nearest_distance, 2)})
         total_distance += nearest_distance
         current_location = (nearest_order['latitude'], nearest_order['longitude'])
+        # remove original object ko karna hai (copy ko nahi)
         unvisited.remove(nearest_order)
 
     return route, round(total_distance, 2)
@@ -65,6 +58,6 @@ if __name__ == '__main__':
 
     print("Best delivery order:")
     for i, order in enumerate(best_route, 1):
-        print(f"{i}. {order['customer_name']}")
+        print(f"{i}. {order['customer_name']} (leg: {order['leg_distance_km']} km)")
 
     print(f"\nTotal distance: {total_km} km")

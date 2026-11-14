@@ -1,26 +1,28 @@
 venv/
 __pycache__/
-git add .
-git commit -m "Day 2: Full setup complete - Node, JWT, ML libraries installed"
-git add .
-git commit -m "Day 3: Created Users table with SQLAlchemy"
-git add .
-git commit -m "Day 3: Added Orders table with foreign key to Users"
-git add .
-git commit -m "Day 3: Added CRUD create route, tested with Thunder Client"
-git add .
-git commit -m "Day 3: Added Read route to fetch all users"
-git add .
-git commit -m "Day 3: Added Order CRUD routes, tested vendor-order linking"
-git add .
-git commit -m "Day 4: Added password hashing with bcrypt"
-git add .
-git commit -m "Day 4: Added JWT login system with password verification"
-git add .
-git commit -m "Day 5: Protected routes with JWT, added my-orders endpoint"
-git add .
-git commit -m "Day 6: Added lat/long to Orders, tested Dijkstra algorithm standalone"
-git add .
-git commit -m "Day 6: Built distance calculation and route optimization algorithm"
-git add .
-git commit -m "Day 7: Connected route optimization algorithm to Flask API"
+
+.env
+.env.*
+!.env.example
+
+# Python environments and cache
+.venv/
+venv/
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Frontend dependencies and build
+node_modules/
+dist/
+build/
+
+# Editor and backup files
+.vscode/
+*.bak
+app_backup_*.py
